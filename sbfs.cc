@@ -7,16 +7,16 @@
 #include <string>
 #include <memory>
 
-//#include "flatbuffers/idl.h"
-//#include "flatbuffers/util.h"
-#include "rocksdb/db.h"
-#include "rocksdb/options.h"
-#include "rocksdb/slice.h"
+#include "flatbuffers/idl.h"
+#include "flatbuffers/util.h"
 
+#include "file_metadata_generated.h"
 #include "sbfs.h"
+#include "sbfs_database.h"
 
+using namespace flatbuffers;
+using namespace sbfs;
 using namespace std;
-using namespace rocksdb;
 
 //-----------------------------------------------------------------------------
 
@@ -28,41 +28,40 @@ static constexpr int64_t kSbfsBlockSize = 8 * 1024;
 //-----------------------------------------------------------------------------
 
 int main(int argc, char** argv) {
-  DB *db;
-  Options options;
 
-  // Optimize RocksDB. This is the easiest way to get RocksDB to perform well.
-  options.IncreaseParallelism();
-  options.OptimizeLevelStyleCompaction();
-  // create the DB if it's not already present
-  options.create_if_missing = true;
-
-  // open DB
-  Status s = DB::Open(options, kDBPath, &db);
-  assert(s.ok());
-
-  // Put key-value
-  s = db->Put(WriteOptions(), "key1", "value");
-  assert(s.ok());
-  std::string value;
-  // get value
-  s = db->Get(ReadOptions(), "key1", &value);
-  assert(s.ok());
-  assert(value == "value");
-
-  // atomically apply a set of updates
+  /* atomically apply a set of updates
   {
     WriteBatch batch;
     batch.Delete("key1");
     batch.Put("key2", value);
     s = db->Write(WriteOptions(), &batch);
   }
+  */
 
-  s = db->Get(ReadOptions(), "key1", &value);
-  assert(s.IsNotFound());
+  // Create DB.
+  SbfsDatabase sbdb(kDBPath);
 
-  db->Get(ReadOptions(), "key2", &value);
-  assert(value == "value");
+  // Build a metadata flatbuffer.
+  flatbuffers::FlatBufferBuilder builder;
+  auto fmloc = CreateFileMetadata(builder, 1,2,3,4,5,6,7,8, FileType_File);
+  builder.Finish(fmloc);
+
+  const char *data = reinterpret_cast<char *>(builder.GetBufferPointer());
+  const int64_t size = builder.GetSize();
+
+  const string inode_str(data, size);
+
+  sbdb.Put("tony", inode_str);
+  const string what = sbdb.Get("tony");
+  uint8_t *buffer_ptr =
+    reinterpret_cast<uint8_t *>(const_cast<char *>(what.data()));
+  auto metadata = GetFileMetadata(buffer_ptr);
+
+  assert(metadata->size_bytes() == 1);
+  assert(metadata->user_id() == 2);
+  assert(metadata->last_inode_modified_time() == 8);
+
+  cout << "all good" << endl;
 
   return 0;
 }

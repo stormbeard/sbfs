@@ -10,21 +10,30 @@
 
 #include <string>
 
-using namespace std;
+#include "flatbuffers/flatbuffers.h"
+#include "flatbuffers/idl.h"
+#include "flatbuffers/util.h"
+#include "rocksdb/db.h"
+#include "rocksdb/options.h"
+#include "rocksdb/slice.h"
 
 class SbfsDatabase {
-  public:
-    // Constructor/Destructor.
-    SbfsDatabase();
-    ~SbfsDatabase();
+ public:
+  // Constructor/Destructor.
+  explicit SbfsDatabase(const std::string& db_path);
+  ~SbfsDatabase();
 
-    // Put a key-value pair into the database.
-    void Put(const string& key, const string& value,
+  // Put a key-value pair into the database.
+  void Put(const std::string& key, const std::string& value,
+           std::function<void()> error_handler = [](){});
+
+  // Return a value associated with a particular key.
+  std::string Get(const std::string& key,
              std::function<void()> error_handler = [](){});
 
-    // Return a value associated with a particular key.
-    string Get(const string& key,
-               std::function<void()> error_handler = [](){});
+ private:
+  // Pointer to the RocksDB instance this class wraps.
+  rocksdb::DB *db_;
 };
 
 #endif // _SBFS_DATABASE_H_

@@ -12,6 +12,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 find_package(Rocksdb)
 include_directories(${ROCKSDB_INCLUDE_DIR})
 
+# Create the flatbuffer.
+execute_process(COMMAND flatc --cpp file_metadata.fbs)
+
 add_library(SbfsDB sbfs_database.cc)
 target_include_directories(SbfsDB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

@@ -1,13 +1,13 @@
 /*
  * Author: Tony Allen (cyril0allen@gmail.com)
- * 
+ *
  * This flatbuffer contains the description of the SBFS file metadata.
  */
 
-namespace Sbfs;
+namespace sbfs;
 
-enum FileType:short {
-  File = 0, 
+enum FileType:byte {
+  File = 0,
 
   Directory,
 
@@ -17,11 +17,10 @@ enum FileType:short {
 
   Socket,
 
-  Device
+  Device = 5
 }
 
-
-struct Inode {
+table FileMetadata {
   // File size in bytes.
   size_bytes:long;
 
@@ -46,11 +45,9 @@ struct Inode {
 
   // Time this inode was last modified.
   last_inode_modified_time:long;
-}
 
-table Metadata {
-  inode:Inode;
+  // File type for this file.
   type:FileType;
 }
 
-root_type Metadata;
+root_type FileMetadata;
