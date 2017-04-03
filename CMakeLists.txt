@@ -5,6 +5,9 @@
 cmake_minimum_required(VERSION 3.7)
 project(SBFS) 
 
+set (CMAKE_CXX_FLAGS "-Wall -std=c++14 -g")
+
+# Find RocksDB.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 find_package(Rocksdb)
 include_directories(${ROCKSDB_INCLUDE_DIR})
