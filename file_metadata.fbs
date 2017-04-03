@@ -1,0 +1,56 @@
+/*
+ * Author: Tony Allen (cyril0allen@gmail.com)
+ * 
+ * This flatbuffer contains the description of the SBFS file metadata.
+ */
+
+namespace Sbfs;
+
+enum FileType:short {
+  File = 0, 
+
+  Directory,
+
+  Symlink,
+
+  NamedPipe,
+
+  Socket,
+
+  Device
+}
+
+
+struct Inode {
+  // File size in bytes.
+  size_bytes:long;
+
+  // The user ID of the file's owner.
+  user_id:long;
+
+  // The group ID of the file.
+  group_id:long;
+
+  // The file mode which determines the file type and how the file's
+  // owner/group/others can access the file.
+  mode:long;
+
+  // The number of hard links to this file.
+  link_count:long;
+
+  // Time this file was last accessed.
+  last_access_time:long;
+
+  // Time this file was last modified.
+  last_file_modified_time:long;
+
+  // Time this inode was last modified.
+  last_inode_modified_time:long;
+}
+
+table Metadata {
+  inode:Inode;
+  type:FileType;
+}
+
+root_type Metadata;
