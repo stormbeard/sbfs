@@ -61,7 +61,17 @@ string SbfsDatabase::Get(const string& key, function<void()> error_handler) {
   if (!status.ok()) {
     error_handler();
   }
-  return move(value);
+  return value;
+}
+
+//-----------------------------------------------------------------------------
+
+void SbfsDatabase::Delete(const string& key, function<void()> error_handler) {
+  assert(db_);
+  Status status = db_->Delete(WriteOptions(), key);
+  if (!status.ok()) {
+    error_handler();
+  }
 }
 
 //-----------------------------------------------------------------------------

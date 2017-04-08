@@ -21,3 +21,5 @@ target_include_directories(SbfsDB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(sbfs sbfs.cc)
 
 target_link_libraries(sbfs LINK_PUBLIC SbfsDB rocksdb)
+
+add_subdirectory(test)

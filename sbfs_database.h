@@ -10,9 +10,6 @@
 
 #include <string>
 
-#include "flatbuffers/flatbuffers.h"
-#include "flatbuffers/idl.h"
-#include "flatbuffers/util.h"
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
 #include "rocksdb/slice.h"
@@ -29,7 +26,11 @@ class SbfsDatabase {
 
   // Return a value associated with a particular key.
   std::string Get(const std::string& key,
-             std::function<void()> error_handler = [](){});
+                  std::function<void()> error_handler = [](){});
+
+  // Delete database entry with the given key.
+  void Delete(const std::string& key,
+              std::function<void()> error_handler = [](){});
 
  private:
   // Pointer to the RocksDB instance this class wraps.

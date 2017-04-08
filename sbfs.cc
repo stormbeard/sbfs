@@ -23,21 +23,11 @@ using namespace std;
 const string kDBPath = "/tmp/rocksdb_simple_example";
 
 // TODO: Don't hardcode this.
-static constexpr int64_t kSbfsBlockSize = 8 * 1024;
+//static constexpr int64_t kSbfsBlockSize = 8 * 1024;
 
 //-----------------------------------------------------------------------------
 
 int main(int argc, char** argv) {
-
-  /* atomically apply a set of updates
-  {
-    WriteBatch batch;
-    batch.Delete("key1");
-    batch.Put("key2", value);
-    s = db->Write(WriteOptions(), &batch);
-  }
-  */
-
   // Create DB.
   SbfsDatabase sbdb(kDBPath);
 
