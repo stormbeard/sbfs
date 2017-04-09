@@ -10,9 +10,14 @@
 
 #include <string>
 
+#include "flatbuffers/flatbuffers.h"
+#include "flatbuffers/idl.h"
+#include "flatbuffers/util.h"
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
 #include "rocksdb/slice.h"
+
+#include "file_metadata_generated.h"
 
 class SbfsDatabase {
  public:

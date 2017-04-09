@@ -7,17 +7,24 @@
 #include <string>
 #include <memory>
 
-#include "sbfs_database.h"
+#include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
 #include "rocksdb/slice.h"
-
 #include "sbfs_database.h"
 
-using namespace std;
+#include "file_metadata_generated.h"
+
 using namespace rocksdb;
+using namespace std;
+
+//-----------------------------------------------------------------------------
+
+// RocksDB column family names.
+const string kMetadataColumnFamily = "sbfs_metadata_column_family";
+const string kDataColumnFamily = "sbfs_metadata_column_family";
 
 //-----------------------------------------------------------------------------
 
@@ -37,6 +44,8 @@ SbfsDatabase::SbfsDatabase(const string& db_path) {
 //-----------------------------------------------------------------------------
 
 SbfsDatabase::~SbfsDatabase() {
+  // Close the RocksDB.
+  delete db_;
 }
 
 //-----------------------------------------------------------------------------
@@ -44,7 +53,6 @@ SbfsDatabase::~SbfsDatabase() {
 void SbfsDatabase::Put(const string& key, const string& value,
                        function<void()> error_handler) {
   assert(db_);
-
   Status status = db_->Put(WriteOptions(), key, value);
   if (!status.ok()) {
     error_handler();

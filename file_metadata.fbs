@@ -17,7 +17,7 @@ enum FileType:byte {
 
   Socket,
 
-  Device = 5
+  Device
 }
 
 table FileMetadata {

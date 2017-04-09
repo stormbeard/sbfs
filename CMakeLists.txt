@@ -15,11 +15,14 @@ include_directories(${ROCKSDB_INCLUDE_DIR})
 # Create the flatbuffer.
 execute_process(COMMAND flatc --cpp file_metadata.fbs)
 
+add_subdirectory(test)
+
 add_library(SbfsDB sbfs_database.cc)
 target_include_directories(SbfsDB PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(sbfs sbfs.cc)
+add_library(SbfsLib sbfs.cc)
+target_include_directories(SbfsLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(sbfs sbfs_main.cc sbfs.cc)
 
 target_link_libraries(sbfs LINK_PUBLIC SbfsDB rocksdb)
-
-add_subdirectory(test)
