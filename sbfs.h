@@ -8,6 +8,7 @@
 #ifndef _SBFS_H_
 #define _SBFS_H_
 
+#include <fuse.h>
 #include <string>
 #include <unordered_map>
 
@@ -40,6 +41,11 @@ class Sbfs {
   // to open().  Open should check if the operation is permitted for the given
   // flags.  Optionally open may also return an arbitrary filehandle in the
   // fuse_file_info structure, which will be passed to all file operations.
+  //
+  // Unsupported operations:
+  //   -- Permissions.
+  //   -- FD_CLOEXEC, O_DSYNC, O_EXCL, O_NOCTTY, O_NONBLOCK, O_RSYNC, O_SYNC,
+  //      O_TRUNC, O_TTY_INIT
   int Open(const char *path, struct fuse_file_info *fuse_fi);
 
   // Read data from an open file.
@@ -90,12 +96,22 @@ class Sbfs {
     }
 
  protected:
+  static const bool FieldSet(int flag, int field) {
+    return (flag & field);
+  }
+
   // Verify if file descriptor is valid;
   bool IsValidFd(int fd);
 
   // Deserialize string to a metadata flatbuffer.
   const sbfs::FileMetadata *DeserializeToMetadata(
     const std::string& metadata_string);
+
+  // Returns an unused file descriptor ID.
+  int GetAvailableFd();
+
+  // Verify the correctness of Open() flags.
+  static const bool OpenFlagsOk(int flags);
 
  protected:
   // Path to the database file.
@@ -104,8 +120,32 @@ class Sbfs {
   // The interface to the filesystem's backing database.
   SbfsDatabase db_;
 
+  // The last allocated file descriptor.
+  int current_allocated_fd_;
+
+  // Container containing previously allocated file descriptors that are now
+  // free.
+  std::vector<int> free_fds_;
+
+  // Data associated with an open file.
+  typedef struct OpenFileInfo {
+    // File descriptor associated with this open file.
+    int fd;
+
+    // File offest marking the current position within the file.
+    int64_t position_offset;
+
+    // Special treatment of file after opening.
+    bool read_allowed;
+    bool write_allowed;
+    bool execute_allowed;
+
+    // Whether to set the offset to the end of the file after each write.
+    bool set_offset_to_end;
+  } OpenFileInfo;
+
   // Mapping from file descriptor to the filename and inode ID.
-  std::unordered_map<int, std::pair<std::string, int64_t>> fd_map_;
+  std::unordered_map<int, OpenFileInfo> fd_map_;
 };
 
 //-----------------------------------------------------------------------------

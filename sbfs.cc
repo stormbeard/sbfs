@@ -3,9 +3,13 @@
  *
  */
 
+#include <fuse.h>
 #include <iostream>
-#include <string>
+#include <limits>
 #include <memory>
+#include <string>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "errno.h"
 #include "flatbuffers/idl.h"
@@ -27,7 +31,8 @@ static const int32_t kDefaultBlockSize = 4 * 1024;
 //-----------------------------------------------------------------------------
 
 Sbfs::Sbfs(const string& sbfs_db_path) : db_path_(sbfs_db_path),
-                                         db_(db_path_) {
+                                         db_(db_path_),
+                                         current_allocated_fd_(2) {
 }
 
 //-----------------------------------------------------------------------------
@@ -43,13 +48,45 @@ const FileMetadata *Sbfs::DeserializeToMetadata(
 
 //-----------------------------------------------------------------------------
 
+int Sbfs::GetAvailableFd() {
+  assert(current_allocated_fd_ >= 0);
+
+  // If there's an fd that was used and released, just return that one.
+  if (free_fds_.size() > 0) {
+    const int fd = free_fds_.back();
+    free_fds_.pop_back();
+    return fd;
+  }
+
+  if (current_allocated_fd_ < std::numeric_limits<int>::max()) {
+    return ++current_allocated_fd_;
+  }
+
+  // If the next fd would cause an overflow, we're out of available file
+  // descriptor IDs.
+  errno = EMFILE;
+  return -EMFILE;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// Fuse operations.
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 int Sbfs::GetAttr(const char *path, struct stat *stat_buffer) {
+  assert(path);
+  assert(stat_buffer);
+
   int err = 0;
   const auto set_err = [&err]() { err = -1; };
   const string serialized_metadata = db_.Get(string(path), set_err);
   if (err != 0) {
     // This can only really mean it's not in the database.
     errno = ENODATA;
+    return -ENODATA;
   }
 
   const FileMetadata *metadata = DeserializeToMetadata(serialized_metadata);
@@ -76,15 +113,90 @@ int Sbfs::GetAttr(const char *path, struct stat *stat_buffer) {
   const int numblk = metadata->offsets()->size();
   stat_buffer->st_blocks = static_cast<blkcnt_t>(numblk);
 
-  return err;
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
 
 int Sbfs::Open(const char *path, struct fuse_file_info *fuse_fi) {
-  // TODO: Implement.
-  assert(false);
-  return -1;
+  assert(path);
+  assert(fuse_fi);
+
+  const int flags = fuse_fi->flags;
+
+  // According to fuse docs, no creation flags will be passed to this function.
+  assert(!FieldSet(flags, O_CREAT));
+  assert(!FieldSet(flags, O_EXCL));
+
+  // TODO: What happens on double-open?
+  //
+  // TODO: Permissions
+
+  int err = 0;
+  const auto set_err = [&err]() { err = -1; };
+  const string serialized_metadata = db_.Get(string(path), set_err);
+  if (err != 0) {
+    // This can only really mean it's not in the database.
+    errno = ENODATA;
+    return -ENODATA;
+  }
+
+  const FileMetadata *metadata = DeserializeToMetadata(serialized_metadata);
+
+
+  // Check for unsupported operations.
+  if (metadata == nullptr) {
+    // Cannot create files, so if it doesn't exist fail out since fuse should
+    // have caught this.
+    assert(false);
+  }
+
+  if (FieldSet(flags, O_DIRECTORY) && metadata->type() == FileType_Directory) {
+    errno = ENOTDIR;
+    return -ENOTDIR;
+  }
+
+  if (FieldSet(flags, O_NOFOLLOW) && metadata->type() == FileType_Symlink) {
+    errno = ELOOP;
+    return -ELOOP;
+  }
+
+  const int fd = GetAvailableFd();
+  OpenFileInfo open_fi = {fd,     /* fd */
+                          0,      /* position_offset */
+                          true,   /* read_allowed */
+                          true,   /* write_allowed */
+                          true,   /* execute_allowed */
+                          false,  /* set_offset_to_end */};
+
+  // Set any special modifiers on the open file.
+  if (FieldSet(flags, O_RDONLY)) {
+    open_fi.write_allowed = false;
+    open_fi.execute_allowed = false;
+  } else if (FieldSet(flags, O_RDWR)) {
+    open_fi.execute_allowed = false;
+  } else if (FieldSet(flags, O_WRONLY)) {
+    open_fi.execute_allowed = false;
+    open_fi.read_allowed = false;
+  }
+  if (FieldSet(flags, O_APPEND)) {
+    open_fi.set_offset_to_end = true;
+  }
+
+  fd_map_.emplace(fd, open_fi);
+  return fd;
+}
+
+//-----------------------------------------------------------------------------
+
+bool const Sbfs::OpenFlagsOk(int flags) {
+  // Exactly one of O_RDONLY, O_RDWR, O_WRONLY should be set.
+  // See which of these are set and unset a single bit. If the result is 0,
+  // then only one was set.
+  const int flags_set = ((flags & O_RDONLY) |
+                         (flags & O_RDWR) |
+                         (flags & O_WRONLY));
+  return (flags_set == 0) || ((flags_set & (flags_set - 1)) == 0);
 }
 
 //-----------------------------------------------------------------------------
