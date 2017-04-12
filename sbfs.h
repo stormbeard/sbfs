@@ -65,13 +65,29 @@ class Sbfs {
              off_t offset,
              struct fuse_file_info *);
 
-    int OpenDir();
+    int OpenDir() {
+      // TODO: Implement.
+      assert(false);
+      return -1;
+    }
 
-    int ReadDir();
+    int ReadDir() {
+      // TODO: Implement.
+      assert(false);
+      return -1;
+    }
 
-    int MkDir();
+    int MkDir() {
+      // TODO: Implement.
+      assert(false);
+      return -1;
+    }
 
-    int RmDir();
+    int RmDir() {
+      // TODO: Implement.
+      assert(false);
+      return -1;
+    }
 
  protected:
   // Verify if file descriptor is valid;

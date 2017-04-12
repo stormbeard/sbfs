@@ -48,6 +48,10 @@ table FileMetadata {
 
   // File type for this file.
   type:FileType;
+
+  // Vector of block offsets. The index is the file offset and the value is the
+  // offset in the device.
+  offsets:[long];
 }
 
 root_type FileMetadata;

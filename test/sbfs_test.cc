@@ -37,14 +37,14 @@ void test_getattr() {
   SbfsTest sbfs(db_location);
   const string filename = "/some/test/filename";
 
-  const auto size_bytes = next_unique_val();
-  const auto user_id = next_unique_val();
-  const auto group_id = next_unique_val();
-  const auto mode = next_unique_val();
-  const auto link_count = next_unique_val();
-  const auto last_access_time= next_unique_val();
-  const auto last_file_modified_time = next_unique_val();
-  const auto last_inode_modified_time = next_unique_val();
+  const int64_t size_bytes = next_unique_val();
+  const int64_t user_id = next_unique_val();
+  const int64_t group_id = next_unique_val();
+  const int64_t mode = next_unique_val();
+  const uint64_t link_count = next_unique_val();
+  const int64_t last_access_time= next_unique_val();
+  const int64_t last_file_modified_time = next_unique_val();
+  const int64_t last_inode_modified_time = next_unique_val();
   const sbfs::FileType file_type = sbfs::FileType_File;
 
   flatbuffers::FlatBufferBuilder builder;

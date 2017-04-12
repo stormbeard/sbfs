@@ -26,3 +26,8 @@ target_include_directories(SbfsLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(sbfs sbfs_main.cc sbfs.cc)
 
 target_link_libraries(sbfs LINK_PUBLIC SbfsDB rocksdb)
+
+# Unit testing
+enable_testing()
+add_test(sbfs_test test/sbfs_test)
+add_test(sbfs_database_test test/sbfs_database_test)

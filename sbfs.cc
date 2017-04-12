@@ -49,7 +49,7 @@ int Sbfs::GetAttr(const char *path, struct stat *stat_buffer) {
   const string serialized_metadata = db_.Get(string(path), set_err);
   if (err != 0) {
     // This can only really mean it's not in the database.
-    errno = ENOATTR;
+    errno = ENODATA;
   }
 
   const FileMetadata *metadata = DeserializeToMetadata(serialized_metadata);
@@ -83,7 +83,9 @@ int Sbfs::GetAttr(const char *path, struct stat *stat_buffer) {
 //-----------------------------------------------------------------------------
 
 int Sbfs::Open(const char *path, struct fuse_file_info *fuse_fi) {
-
+  // TODO: Implement.
+  assert(false);
+  return -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -93,7 +95,9 @@ int Sbfs::Read(const char *path,
                const size_t size,
                const off_t offset,
                struct fuse_file_info *fuse_fi) {
-
+  // TODO: Implement.
+  assert(false);
+  return -1;
 }
 
 //-----------------------------------------------------------------------------
