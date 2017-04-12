@@ -37,6 +37,7 @@ void test_getattr() {
   SbfsTest sbfs(db_location);
   const string filename = "/some/test/filename";
 
+  flatbuffers::FlatBufferBuilder builder;
   const int64_t size_bytes = next_unique_val();
   const int64_t user_id = next_unique_val();
   const int64_t group_id = next_unique_val();
@@ -46,8 +47,9 @@ void test_getattr() {
   const int64_t last_file_modified_time = next_unique_val();
   const int64_t last_inode_modified_time = next_unique_val();
   const sbfs::FileType file_type = sbfs::FileType_File;
+  const vector<int64_t> bogus_block_offsets({1,2,3});
+  const auto block_vec = builder.CreateVector(bogus_block_offsets);
 
-  flatbuffers::FlatBufferBuilder builder;
   auto fmloc = CreateFileMetadata(builder,
                                   size_bytes,
                                   user_id,
@@ -57,7 +59,8 @@ void test_getattr() {
                                   last_access_time,
                                   last_file_modified_time,
                                   last_inode_modified_time,
-                                  file_type);
+                                  file_type,
+                                  block_vec);
 
   builder.Finish(fmloc);
   const char *data = reinterpret_cast<char *>(builder.GetBufferPointer());
@@ -76,6 +79,8 @@ void test_getattr() {
   assert(st_buf.st_atime == last_access_time);
   assert(st_buf.st_mtime == last_file_modified_time);
   assert(st_buf.st_ctime == last_inode_modified_time);
+  assert(static_cast<uint64_t>(st_buf.st_blocks) ==
+         bogus_block_offsets.size());
 }
 
 //-----------------------------------------------------------------------------

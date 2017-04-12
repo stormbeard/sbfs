@@ -73,8 +73,7 @@ int Sbfs::GetAttr(const char *path, struct stat *stat_buffer) {
     static_cast<time_t>(metadata->last_inode_modified_time());
   stat_buffer->st_blksize =
     static_cast<blksize_t>(kDefaultBlockSize);
-  // TODO: deal with blocks.
-  const int numblk = 1337;
+  const int numblk = metadata->offsets()->size();
   stat_buffer->st_blocks = static_cast<blkcnt_t>(numblk);
 
   return err;
