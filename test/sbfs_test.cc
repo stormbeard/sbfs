@@ -8,6 +8,7 @@
 #include <string>
 #include <time.h>
 
+#include "errno.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
 
@@ -24,6 +25,14 @@ const std::function<void()> fail_out = []() { assert(false); };
 class SbfsTest : public Sbfs {
  public:
   SbfsTest(const std::string& db_location) : Sbfs(db_location) {}
+
+  bool TestIsValidFd(int fd) { return IsValidFd(fd); }
+
+  void dump(){
+    cout << "@tallen: " << fd_map_.size() << endl;
+  }
+
+  // Accessors.
   SbfsDatabase& db() { return db_; }
 };
 
@@ -119,24 +128,34 @@ void Tester::TestGetAttr() {
 }
 
 //-----------------------------------------------------------------------------
-#if 0
+
 void Tester::TestOpen() {
   cout << "Running " << __func__ << endl;
   const string db_location = CreateDbLocation(__func__);
   SbfsTest sbfs(db_location);
-  const string filename = "/some/test/filename";
+  const string filepath = "/some/test/filename";
 
   unique_ptr<struct fuse_file_info> fuse_file_info =
     make_unique<struct fuse_file_info>();
+  fuse_file_info->flags = 0;
 
+  // Make sure we report bogus fd.
+  assert(!sbfs.TestIsValidFd(1337));
+
+  // Make sure we can't open a file that hasn't been created yet.
+  const int fd = sbfs.Open(filepath.c_str(), fuse_file_info.get());
+  assert(fd == -ENODATA);
+
+  // TODO: create a file and test it can be opened.
 }
-#endif
+
 //-----------------------------------------------------------------------------
 
 int main(int argc, char** argv) {
   cout << "=== Running SBFS tests === " << endl;
   Tester tester;
   tester.TestGetAttr();
+  tester.TestOpen();
   cout << "ALL TESTS PASSED" << endl;
   return 0;
 }

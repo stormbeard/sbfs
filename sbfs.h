@@ -96,12 +96,10 @@ class Sbfs {
     }
 
  protected:
-  static const bool IsFieldSet(int flag, int field) {
-    return (flag & field);
-  }
+  static const bool IsFieldSet(int flag, int field) { return (flag & field); }
 
   // Verify if file descriptor is valid;
-  bool IsValidFd(int fd);
+  bool IsValidFd(int fd) const { return fd_map_.count(fd) > 0; }
 
   // Deserialize string to a metadata flatbuffer.
   const sbfs::FileMetadata *DeserializeToMetadata(
