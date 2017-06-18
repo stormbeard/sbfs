@@ -3,6 +3,7 @@
  *
  */
 
+#include <fuse.h>
 #include <iostream>
 #include <string>
 #include <time.h>
@@ -18,34 +19,68 @@ using namespace std;
 
 const std::function<void()> fail_out = []() { assert(false); };
 
-const string test_db_prefix = "/tmp/sbfs_unit_test_";
+//-----------------------------------------------------------------------------
 
-const string now = string(to_string(std::time(0)));
+class SbfsTest : public Sbfs {
+ public:
+  SbfsTest(const std::string& db_location) : Sbfs(db_location) {}
+  SbfsDatabase& db() { return db_; }
+};
 
 //-----------------------------------------------------------------------------
 
-int64_t next_unique_val() {
-  static int64_t val = 0;
-  return ++val;
+class Tester {
+ public:
+  // Constructor/destructor.
+  Tester();
+  ~Tester() = default;
+
+  void TestGetAttr();
+  void TestOpen();
+
+ private:
+  // Return an integer different from any other integers returned from this
+  // function previously.
+  int64_t NextUniqueVal() {
+    return ++unique_val_;
+  }
+
+  // Creates a database location given some identifier string.
+  string CreateDbLocation(const string& identifier) {
+    const string test_db_prefix = "/tmp/sbfs_unit_test_";
+    const string now = string(to_string(std::time(0)));
+    return test_db_prefix + identifier + now;
+  }
+
+ private:
+  // Variable holding the last unique integer returned from 'NextUniqueVal'.
+  int64_t unique_val_;
+};
+
+//-----------------------------------------------------------------------------
+
+Tester::Tester() :
+  unique_val_(0) {
+
 }
 
 //-----------------------------------------------------------------------------
 
-void test_getattr() {
+void Tester::TestGetAttr() {
   cout << "Running " << __func__ << endl;
-  const string db_location = test_db_prefix + __func__ + now;
+  const string db_location = CreateDbLocation(__func__);
   SbfsTest sbfs(db_location);
   const string filename = "/some/test/filename";
 
   flatbuffers::FlatBufferBuilder builder;
-  const int64_t size_bytes = next_unique_val();
-  const int64_t user_id = next_unique_val();
-  const int64_t group_id = next_unique_val();
-  const int64_t mode = next_unique_val();
-  const uint64_t link_count = next_unique_val();
-  const int64_t last_access_time= next_unique_val();
-  const int64_t last_file_modified_time = next_unique_val();
-  const int64_t last_inode_modified_time = next_unique_val();
+  const int64_t size_bytes = NextUniqueVal();
+  const int64_t user_id = NextUniqueVal();
+  const int64_t group_id = NextUniqueVal();
+  const int64_t mode = NextUniqueVal();
+  const uint64_t link_count = NextUniqueVal();
+  const int64_t last_access_time= NextUniqueVal();
+  const int64_t last_file_modified_time = NextUniqueVal();
+  const int64_t last_inode_modified_time = NextUniqueVal();
   const sbfs::FileType file_type = sbfs::FileType_File;
   const vector<int64_t> bogus_block_offsets({1,2,3});
   const auto block_vec = builder.CreateVector(bogus_block_offsets);
@@ -84,12 +119,24 @@ void test_getattr() {
 }
 
 //-----------------------------------------------------------------------------
+#if 0
+void Tester::TestOpen() {
+  cout << "Running " << __func__ << endl;
+  const string db_location = CreateDbLocation(__func__);
+  SbfsTest sbfs(db_location);
+  const string filename = "/some/test/filename";
+
+  unique_ptr<struct fuse_file_info> fuse_file_info =
+    make_unique<struct fuse_file_info>();
+
+}
+#endif
+//-----------------------------------------------------------------------------
 
 int main(int argc, char** argv) {
   cout << "=== Running SBFS tests === " << endl;
-
-  test_getattr();
-
+  Tester tester;
+  tester.TestGetAttr();
   cout << "ALL TESTS PASSED" << endl;
   return 0;
 }
