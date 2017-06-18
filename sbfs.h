@@ -35,6 +35,16 @@ class Sbfs {
   // 'st_ino' field is ignored except if the 'use_ino' mount option is given.
   int GetAttr(const char *path, struct stat *stat_buffer);
 
+  // Create a file node
+  //
+  // There is no create() operation, mknod() will be called for
+  // creation of all non-directory, non-symlink nodes.
+  //
+  // Currently only setting permissions/IDs based on the file owner and nothing
+  // else. Let this mark a TODO to fix this and allow the mode argument to be
+  // properly used.
+  int MkNod(const char *path, mode_t mode, dev_t dev);
+
   // File open operation.
   //
   // No creation, or truncation flags (O_CREAT, O_EXCL, O_TRUNC) will be passed

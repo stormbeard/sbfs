@@ -117,6 +117,38 @@ int Sbfs::GetAttr(const char *path, struct stat *stat_buffer) {
 }
 
 //-----------------------------------------------------------------------------
+int Sbfs::MkNod(const char *path, mode_t mode, dev_t dev) {
+  // Man page for mknod states the only portable use of mknod is to create a
+  // FIFO-special file. We assert this for simplicity in this project.
+  assert(mode == S_IFIFO);
+
+  //const long file_type = mode & ~S_IFMT;
+
+  // TODO: Currently ignoring permissions.
+  FlatBufferBuilder fb_builder;
+  const vector<int64_t> offsets;
+  auto fmloc = CreateFileMetadata(fb_builder,
+                                  0 /* size_bytes */,
+                                  0 /* user_id */,
+                                  0 /* group_id */,
+                                  mode,
+                                  1 /* link_count */,
+                                  std::time(0) /* last_access_time */,
+                                  std::time(0) /* last_file_modified_time */,
+                                  std::time(0) /* last_inode_modified_time */,
+                                  // TODO: fix this hard-coded file type.
+                                  FileType_File,
+                                  fb_builder.CreateVector(offsets));
+  // TODO: make easier interface to sbfs db.
+  fb_builder.Finish(fmloc);
+  const char *data = reinterpret_cast<char *>(fb_builder.GetBufferPointer());
+  const auto size = fb_builder.GetSize();
+  db_.Put(path, string(data, size));
+
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
 
 int Sbfs::Open(const char *path, struct fuse_file_info *fuse_fi) {
   assert(path);
