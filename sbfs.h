@@ -96,7 +96,7 @@ class Sbfs {
     }
 
  protected:
-  static const bool FieldSet(int flag, int field) {
+  static const bool IsFieldSet(int flag, int field) {
     return (flag & field);
   }
 
@@ -136,25 +136,16 @@ class Sbfs {
     int64_t position_offset;
 
     // Special treatment of file after opening.
-    bool read_allowed;
-    bool write_allowed;
-    bool execute_allowed;
+    bool read_allowed : 1;
+    bool write_allowed : 1;
+    bool execute_allowed : 1;
 
     // Whether to set the offset to the end of the file after each write.
-    bool set_offset_to_end;
+    bool set_offset_to_end : 1;
   } OpenFileInfo;
 
   // Mapping from file descriptor to the filename and inode ID.
   std::unordered_map<int, OpenFileInfo> fd_map_;
-};
-
-//-----------------------------------------------------------------------------
-
-// Used only for unit test.
-class SbfsTest : public Sbfs {
- public:
-  SbfsTest(const std::string& db_location) : Sbfs(db_location) {}
-  SbfsDatabase& db() { return db_; }
 };
 
 //-----------------------------------------------------------------------------

@@ -125,8 +125,8 @@ int Sbfs::Open(const char *path, struct fuse_file_info *fuse_fi) {
   const int flags = fuse_fi->flags;
 
   // According to fuse docs, no creation flags will be passed to this function.
-  assert(!FieldSet(flags, O_CREAT));
-  assert(!FieldSet(flags, O_EXCL));
+  assert(!IsFieldSet(flags, O_CREAT));
+  assert(!IsFieldSet(flags, O_EXCL));
 
   // TODO: What happens on double-open?
   //
@@ -151,12 +151,13 @@ int Sbfs::Open(const char *path, struct fuse_file_info *fuse_fi) {
     assert(false);
   }
 
-  if (FieldSet(flags, O_DIRECTORY) && metadata->type() == FileType_Directory) {
+  if (IsFieldSet(flags, O_DIRECTORY) &&
+      metadata->type() == FileType_Directory) {
     errno = ENOTDIR;
     return -ENOTDIR;
   }
 
-  if (FieldSet(flags, O_NOFOLLOW) && metadata->type() == FileType_Symlink) {
+  if (IsFieldSet(flags, O_NOFOLLOW) && metadata->type() == FileType_Symlink) {
     errno = ELOOP;
     return -ELOOP;
   }
@@ -170,16 +171,16 @@ int Sbfs::Open(const char *path, struct fuse_file_info *fuse_fi) {
                           false,  /* set_offset_to_end */};
 
   // Set any special modifiers on the open file.
-  if (FieldSet(flags, O_RDONLY)) {
+  if (IsFieldSet(flags, O_RDONLY)) {
     open_fi.write_allowed = false;
     open_fi.execute_allowed = false;
-  } else if (FieldSet(flags, O_RDWR)) {
+  } else if (IsFieldSet(flags, O_RDWR)) {
     open_fi.execute_allowed = false;
-  } else if (FieldSet(flags, O_WRONLY)) {
+  } else if (IsFieldSet(flags, O_WRONLY)) {
     open_fi.execute_allowed = false;
     open_fi.read_allowed = false;
   }
-  if (FieldSet(flags, O_APPEND)) {
+  if (IsFieldSet(flags, O_APPEND)) {
     open_fi.set_offset_to_end = true;
   }
 
